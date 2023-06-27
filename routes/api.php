@@ -145,3 +145,4 @@ Route::get('/notification-list', [UsersController::class, 'notificationList']);
 /************************* SEO API ************************************/
 Route::get('/get-seo-page', [SiteSEOController::class, 'GetSEOPage']);
 /************************* End SEO API ********************************/
+Route::post('/stripe-checkout', [UsersController::class, 'stripeCheckout']);

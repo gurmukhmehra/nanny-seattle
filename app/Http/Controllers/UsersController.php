@@ -196,56 +196,56 @@ class UsersController extends Controller
 
         $patmentGateway = PaymentGateway::where('id',1)->first();
 
-        if(stripeDetail('payment_mode')=='test_mode'):
-            $stripe = new \Stripe\StripeClient(
-                stripeDetail('StripeSecretkey')
-            );
-        else:
-            $stripe = new \Stripe\StripeClient(
-                stripeDetail('live_StripeSecretkey')
-            );
-        endif;
+        // if(stripeDetail('payment_mode')=='test_mode'):
+        //     $stripe = new \Stripe\StripeClient(
+        //         stripeDetail('StripeSecretkey')
+        //     );
+        // else:
+        //     $stripe = new \Stripe\StripeClient(
+        //         stripeDetail('live_StripeSecretkey')
+        //     );
+        // endif;
 
-        if($planDetail->id=='29748' || $planDetail->id=='184396'):
-            $success_url = URL::to('/thank-you-family-annual');
-        elseif($planDetail->id=='155721' || $planDetail->id=='184397'):
-            $success_url = URL::to('/thank-you-family-monthly');
-        elseif($planDetail->id=='155718' || $planDetail->id=='184398'):
-            $success_url = URL::to('/thank-you-family-one-month-only');
-        elseif($planDetail->id=='29896' || $planDetail->id=='184399'):
-            $success_url = URL::to('/thank-you-care-providers-annual');
-        elseif($planDetail->id=='30019' || $planDetail->id=='184400'):
-            $success_url = URL::to('/thank-you-agency-annual');
-        elseif($planDetail->id=='155715' || $planDetail->id=='184401'):
-            $success_url = URL::to('/thank-you-agency-monthly');
-            elseif($planDetail->id=='155712' || $planDetail->id=='184402'):
-            $success_url = URL::to('/thank-you-agency-one-month-only');
-        else:
-            $success_url = URL::to('/success');
-        endif;
+        // if($planDetail->id=='29748' || $planDetail->id=='184396'):
+        //     $success_url = URL::to('/thank-you-family-annual');
+        // elseif($planDetail->id=='155721' || $planDetail->id=='184397'):
+        //     $success_url = URL::to('/thank-you-family-monthly');
+        // elseif($planDetail->id=='155718' || $planDetail->id=='184398'):
+        //     $success_url = URL::to('/thank-you-family-one-month-only');
+        // elseif($planDetail->id=='29896' || $planDetail->id=='184399'):
+        //     $success_url = URL::to('/thank-you-care-providers-annual');
+        // elseif($planDetail->id=='30019' || $planDetail->id=='184400'):
+        //     $success_url = URL::to('/thank-you-agency-annual');
+        // elseif($planDetail->id=='155715' || $planDetail->id=='184401'):
+        //     $success_url = URL::to('/thank-you-agency-monthly');
+        //     elseif($planDetail->id=='155712' || $planDetail->id=='184402'):
+        //     $success_url = URL::to('/thank-you-agency-one-month-only');
+        // else:
+        //     $success_url = URL::to('/success');
+        // endif;
 
-        if($planDetail->mepr_product_period=='lifetime'): 
-            $success_url2 = $success_url;
-            $checkout = $stripe->checkout->sessions->create( [
-                'success_url' => $success_url2,
-                'cancel_url' => URL::to('/cancel'),
-                'line_items' => [
-                [
-                    'price' => $planDetail->stripe_prod_priceID,
-                    'quantity' => 1,
-                ]   
-                ],
-                'invoice_creation' => [
-                'enabled' => true,  
-            ],
-                'customer_email'=> $user->email,
-                'mode' => 'payment',
-            ]);
-            $checkout_sessionID = $checkout->id;
-        else:
-            $checkout_sessionID = '';
-            $success_url2 = $success_url;
-        endif;
+        // if($planDetail->mepr_product_period=='lifetime'): 
+        //     $success_url2 = $success_url;
+        //     $checkout = $stripe->checkout->sessions->create( [
+        //         'success_url' => $success_url2,
+        //         'cancel_url' => URL::to('/cancel'),
+        //         'line_items' => [
+        //         [
+        //             'price' => $planDetail->stripe_prod_priceID,
+        //             'quantity' => 1,
+        //         ]   
+        //         ],
+        //         'invoice_creation' => [
+        //         'enabled' => true,  
+        //     ],
+        //         'customer_email'=> $user->email,
+        //         'mode' => 'payment',
+        //     ]);
+        //     $checkout_sessionID = $checkout->id;
+        // else:
+        //     $checkout_sessionID = '';
+        //     $success_url2 = $success_url;
+        // endif;
 
         $userGroups = new UserGroup;
         $userGroups->userID = $user->id;
@@ -256,8 +256,8 @@ class UsersController extends Controller
             'userInfo' => $user,
             'planDetail' => $planDetail,
             'patmentGateway' => $patmentGateway,
-            'checkout_sessionID' => $checkout_sessionID,
-            'success_url' => $success_url2            
+            //'checkout_sessionID' => $checkout_sessionID,
+            //'success_url' => $success_url2            
         ]);
     }
 
@@ -4620,6 +4620,58 @@ class UsersController extends Controller
                 'total_notifaction' => $pending_friends_requests
             ]);
         endif;    
+    }
+
+    public function stripeCheckout(Request $request)
+    {
+        $inputs = Request::all();
+        if(stripeDetail('payment_mode')=='test_mode'):
+            $stripe = new \Stripe\StripeClient(
+                stripeDetail('StripeSecretkey')
+            );
+        else:
+            $stripe = new \Stripe\StripeClient(
+                stripeDetail('live_StripeSecretkey')
+            );
+        endif;
+        $planDetail = Membership::where('stripe_prod_priceID',$inputs['stripe_prod_priceID'])->first();
+        if($planDetail->id=='29748' || $planDetail->id=='184396'):
+            $success_url = URL::to('/thank-you-family-annual');
+        elseif($planDetail->id=='155721' || $planDetail->id=='184397'):
+            $success_url = URL::to('/thank-you-family-monthly');
+        elseif($planDetail->id=='155718' || $planDetail->id=='184398'):
+            $success_url = URL::to('/thank-you-family-one-month-only');
+        elseif($planDetail->id=='29896' || $planDetail->id=='184399'):
+            $success_url = URL::to('/thank-you-care-providers-annual');
+        elseif($planDetail->id=='30019' || $planDetail->id=='184400'):
+            $success_url = URL::to('/thank-you-agency-annual');
+        elseif($planDetail->id=='155715' || $planDetail->id=='184401'):
+            $success_url = URL::to('/thank-you-agency-monthly');
+            elseif($planDetail->id=='155712' || $planDetail->id=='184402'):
+            $success_url = URL::to('/thank-you-agency-one-month-only');
+        else:
+            $success_url = URL::to('/success');
+        endif;
+        if($planDetail->mepr_product_period=='lifetime'):
+            $paymode = 'payment';
+        else: 
+            $paymode = 'subscription';
+        endif;
+        $session=$stripe->checkout->sessions->create([                    
+            'line_items' => [
+            [
+                'price' => $inputs['stripe_prod_priceID'],
+                'quantity' => 1,
+            ],
+            ],
+            'customer_email'=>$inputs['customer_email'],
+            'mode' => $paymode,
+            'success_url' => $success_url,
+            'cancel_url' => URL::to('/cancel'),
+        ]);
+        return response()->json([
+            'payment_url' => $session->url
+        ]);
     }
 
 }

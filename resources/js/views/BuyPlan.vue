@@ -184,11 +184,12 @@
             <div class="form-group mb-4 mt-2">
                 <div class="form-check">
                     <label class="form-check-label">
-                        <input type="checkbox" class="form-check-input" required value=""> 
+                        <input type="checkbox" class="form-check-input" required value="" ref="theCheckbox"> 
                         <router-link to="/terms-of-use" rel="Terms of Use" target="_blank" style="font-weight: 600;">
                             I have read and agree to the Terms of Use<sup class="text-danger">*</sup>
                         </router-link>
                     </label>
+                    <p class="text-danger" v-if="agreeTerms">{{ agreeTerms }}</p>
                 </div>
                 <div class="form-check">
                     <label class="form-check-label">
@@ -240,7 +241,7 @@
                 password: "",
                 ConfirmPassword: "",
                 error_inputs: "",
-
+                agreeTerms:"",
                 publishableKey:"",
                 FacebookCommunityYes: false,
                 SelectFacebookCommunity:[],
@@ -288,57 +289,63 @@
                 return value;
             },
             register() { 
-                this.loading = true;           
-                axios.post(`/api/register`, {                                   
-                    planID: this.planDetail.id,
-                    planPrice: this.planDetail.mepr_product_price,
-                    planPriceID: this.planDetail.stripe_prod_priceID,
-                    //memberType: 'family_parent_member',
-                    UserGroup:this.UserGroup,
-                    firstName: this.firstName,
-                    lastName: this.lastName,
-                    email: this.email,
-                    address1: this.address1,
-                    address22: this.address22,
-                    stateProvince: this.stateProvince,
-                    postalCode: this.postalCode,
-                    phoneNumber: this.phoneNumber,
-                    userName: this.userName,
-                    password: this.password,
-                    ConfirmPassword: this.ConfirmPassword,
-                }).then((response) => {
-                    //console.log(response.data.userInfo.email);
-                    this.loading = true;
-                    this.email = "";
-                    this.firstName = "";
-                    this.lastName = "";
-                    this.email = "";
-                    this.address1 = "";
-                    this.address22 = "";
-                    this.stateProvince = "";
-                    this.postalCode = "";
-                    this.phoneNumber = "";
-                    this.userName = "";
-                    this.password = "";
-                    this.ConfirmPassword = "";                
-                    router.push({ name: 'stripepayment', 
-                                    params: {
-                                        publishableKeys: response.data.patmentGateway.StripePublishablekey,
-                                        planID:response.data.planDetail.id,
-                                        planTitle:response.data.planDetail.post_title,
-                                        planPrice:response.data.planDetail.mepr_product_price,
-                                        planPriceID:response.data.planDetail.stripe_prod_priceID,
-                                        planProduct_period:response.data.planDetail.mepr_product_period,
-                                        userEmail:response.data.userInfo.email,
-                                        userIDs:response.data.userInfo.id,
-                                        sessionId:response.data.checkout_sessionID
-                                    } 
-                                });
-                }).catch(error => {
-                    //this.correct = true, 
+                this.loading = true; 
+                if(this.$refs.theCheckbox.checked) {          
+                    axios.post(`/api/register`, {                                   
+                        planID: this.planDetail.id,
+                        planPrice: this.planDetail.mepr_product_price,
+                        planPriceID: this.planDetail.stripe_prod_priceID,
+                        //memberType: 'family_parent_member',
+                        UserGroup:this.UserGroup,
+                        firstName: this.firstName,
+                        lastName: this.lastName,
+                        email: this.email,
+                        address1: this.address1,
+                        address22: this.address22,
+                        stateProvince: this.stateProvince,
+                        postalCode: this.postalCode,
+                        phoneNumber: this.phoneNumber,
+                        userName: this.userName,
+                        password: this.password,
+                        ConfirmPassword: this.ConfirmPassword,
+                    }).then((response) => {
+                        //console.log(response.data.userInfo.email);
+                        this.loading = true;
+                        this.email = "";
+                        this.firstName = "";
+                        this.lastName = "";
+                        this.email = "";
+                        this.address1 = "";
+                        this.address22 = "";
+                        this.stateProvince = "";
+                        this.postalCode = "";
+                        this.phoneNumber = "";
+                        this.userName = "";
+                        this.password = "";
+                        this.ConfirmPassword = "";                
+                        router.push({ name: 'stripepayment', 
+                                        params: {
+                                            publishableKeys: response.data.patmentGateway.StripePublishablekey,
+                                            planID:response.data.planDetail.id,
+                                            planTitle:response.data.planDetail.post_title,
+                                            planPrice:response.data.planDetail.mepr_product_price,
+                                            planPriceID:response.data.planDetail.stripe_prod_priceID,
+                                            planProduct_period:response.data.planDetail.mepr_product_period,
+                                            userEmail:response.data.userInfo.email,
+                                            userIDs:response.data.userInfo.id
+                                            //sessionId:response.data.checkout_sessionID
+                                        } 
+                                    });
+                    }).catch(error => {
+                        //this.correct = true, 
+                        this.loading = false;
+                        this.error_inputs = error.response.data.error
+                    });
+                } else {
                     this.loading = false;
-                    this.error_inputs = error.response.data.error
-                });
+                    this.agreeTerms = "You have to agree the terms of use.";
+                    setTimeout(() => this.agreeTerms = '', 3000); 
+                }
             },
             addressValue(){
                 if(this.address1.length>0){
