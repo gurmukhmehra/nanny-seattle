@@ -37,9 +37,9 @@ class StripePaymentController extends Controller
         /****************** Live Webhook *************************/
         $patmentGateway = PaymentGateway::where('id',1)->first();
         if($patmentGateway->payment_mode=='test_mode'){
-            $endpoint_secret = 'whsec_ljF0bfEKxjUQwpNNx9BynEPFIybFl2In';
+            $endpoint_secret = $patmentGateway->test_endpoint_secret;
         }else{
-            $endpoint_secret = 'whsec_uAkNBNuxx1v5H7KLLIZQqmpj1DzBEC0U';
+            $endpoint_secret = $patmentGateway->live_endpoint_secret;
         }                                  
            
         /********************* Live Webhook **********************/
@@ -66,22 +66,56 @@ class StripePaymentController extends Controller
         case 'invoice.payment_succeeded':
             $patmentGateway2 = PaymentGateway::where('id',1)->first();
             $invoice = $event->data->object;           
-            if($patmentGateway2->payment_mode=='test_mode'){
+            if(stripeDetail('payment_mode')=='test_mode'):
                 $stripe = new \Stripe\StripeClient(
-                    'sk_test_VTsUt7dFurCaJnC0Z1izh2Fo'
+                    stripeDetail('StripeSecretkey')
                 );
-            }else{
+            else:
                 $stripe = new \Stripe\StripeClient(
-                    'sk_live_ys6irpPxtYnH1h1JLcdXkkxT'
+                    stripeDetail('live_StripeSecretkey')
                 );
-            }          
+            endif;        
 
             // $subscriptions= $stripe->charges->retrieve(
             //     $invoice->charges
             //     //['expand' => ['customer', 'invoice.subscription']]
             // );            
-            
-            $findUserInfo = User::where('email',$invoice->customer_email)->first();
+            $userData_session = Session::get('userData'); 
+            $checkEmail = User::where('email',$userData_session['email'])->count();
+            if($checkEmail>0):
+                $user = User::where('email',$userData_session['email'])->first();
+                $user->firstName = $userData_session['firstName'];
+                $user->lastName = $userData_session['lastName'];
+                $user->name = $userData_session['name'];
+                $user->address1 = $userData_session['address1'];
+                $user->address2 = $userData_session['address2'];
+                $user->state = $userData_session['state'];
+                $user->postal_code = $userData_session['postal_code'];
+                $user->mobile = $userData_session['mobile'];
+                $user->save();
+            else:
+                $user = new User;
+                $user->role = 'subscriber';
+                $user->memberType = $userData_session['memberType'];        
+                $user->firstName = $userData_session['firstName'];
+                $user->lastName = $userData_session['lastName'];
+                $user->name = $userData_session['name'];
+                $user->address1 = $userData_session['address1'];
+                $user->address2 = $userData_session['address2'];
+                $user->state = $userData_session['state'];
+                $user->postal_code = $userData_session['postal_code'];
+                $user->mobile = $userData_session['mobile'];
+                $user->username = $userData_session['username'];
+                $user->email = $userData_session['email'];
+                $user->password = $userData_session['user_password'];
+                $user->wp_password_update = 1;
+                $user->save();
+
+                $userGroups = new UserGroup;
+                $userGroups->userID = $user->id;
+                $userGroups->groupID = $userData_session['UserGroup'];
+                $userGroups->save();
+            endif;
             $findMemberShipInfo = Membership::where('stripe_prod_priceID',$invoice->lines->data[0]->price->id)->first();
            
             $findSubcription = new subscribersPlans;
@@ -272,7 +306,24 @@ class StripePaymentController extends Controller
                     $message->to($data['siteEmail']);                    
                 });
             /******************** Email To Admin ******************************/
-            break;
+            if($findMemberShipInfo->id=='29748' || $findMemberShipInfo->id=='184396'):
+                $success_url = URL::to('/thank-you-family-annual');
+            elseif($findMemberShipInfo->id=='155721' || $findMemberShipInfo->id=='184397'):
+                $success_url = URL::to('/thank-you-family-monthly');
+            elseif($findMemberShipInfo->id=='155718' || $findMemberShipInfo->id=='184398'):
+                $success_url = URL::to('/thank-you-family-one-month-only');
+            elseif($findMemberShipInfo->id=='29896' || $findMemberShipInfo->id=='184399'):
+                $success_url = URL::to('/thank-you-care-providers-annual');
+            elseif($findMemberShipInfo->id=='30019' || $findMemberShipInfo->id=='184400'):
+                $success_url = URL::to('/thank-you-agency-annual');
+            elseif($findMemberShipInfo->id=='155715' || $findMemberShipInfo->id=='184401'):
+                $success_url = URL::to('/thank-you-agency-monthly');
+                elseif($findMemberShipInfo->id=='155712' || $findMemberShipInfo->id=='184402'):
+                $success_url = URL::to('/thank-you-agency-one-month-only');
+            else:
+                $success_url = URL::to('/success');
+            endif;
+        break;
         case 'payment_intent.payment_failed':
             $patmentGateway3 = PaymentGateway::where('id',1)->first();
             $paymentIntent = $event->data->object;           

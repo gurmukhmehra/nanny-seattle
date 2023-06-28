@@ -8,7 +8,7 @@
                 and personal support from our team. Membership renews automatically. To avoid charges for the 
                 next year, cancel before the renewal date.
             </p>
-               
+             
             <div class="table-responsive-sm">
               <table class="table">
                   <thead>
@@ -38,7 +38,7 @@
                     </span>
                     Pay Now
                 </button> 
-                <p v-else class="" @click="cancelPayment"></p>
+                <p v-else class=""></p>
             </div>          
             
         </div>    
@@ -46,17 +46,17 @@
     </template>
     
     <script>          
-        export default {  
-             props:{
-                planPrice:Number,
-                planPriceID:String,
+        export default { 
+            props:{
                 planTitle:String,
-                planProduct_period:String,
-                userEmail:String
+                planPrice:Number
             },        
-            data(){                             
+            data(){                                             
                 return {  
-                    loader :false                                    
+                    loader :false,
+                    planPriceID:'',
+                    planProduct_period:'',
+                    userEmail:''                                  
                 }
             },
             methods: {            
@@ -69,17 +69,18 @@
                         window.location.href = response.data.payment_url;
                     }).catch(error => {
                     });
-                },
-                cancelPayment(){
-                    window.location.href = "/";
-                }   
+                }  
             },        
-            mounted() {          
+            mounted() {  
+                       
             },
             created() {                
-                if(this.planPriceID==null || this.planPriceID=='undefined'){
-                    this.cancelPayment();
-                }
+                axios.get('api/get-user-session', {
+                }).then((response) => { 
+                    this.planPriceID = response.data.userSession.planPriceID;
+                    this.userEmail = response.data.userSession.email;                   
+                }).catch(error => {
+                }); 
                 window.scrollTo(0,0); 
             }       
         }

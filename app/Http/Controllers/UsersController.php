@@ -95,8 +95,14 @@ class UsersController extends Controller
 
     public function planDetails($slug)
     {
+        // $planDetail = Membership::where('post_title_slug',$slug)->first();
+        // return response()->json($planDetail);
+        $userData_session = Session::get('userData');                       
         $planDetail = Membership::where('post_title_slug',$slug)->first();
-        return response()->json($planDetail);
+        return response()->json([
+            'planDetail' => $planDetail,
+            'userData_session' => $userData_session
+        ]);
     }
 
     public function careProviderAnnualPlans()
@@ -144,9 +150,19 @@ class UsersController extends Controller
 
     public function register(Request $request)
     {
+        Session::forget('userData');
         $inputs = Request::all();
         if((Auth::check())):
-            $user = User::findOrFail(Auth::user()->id);
+            $validator = Validator::make($inputs, [
+                'firstName' => 'required',
+                'lastName' => 'required',
+                'address1' => 'required|string|max:255',
+                'stateProvince' => 'required|string|max:255',
+                'postalCode' => 'required|string|max:255',
+                'phoneNumber' => 'required|string|max:255',
+                'userName' => 'required|string|max:255|unique:users,userName,'.Auth::user()->id,
+                'email' => 'required|string|email|max:255|unique:users,email,'.Auth::user()->id
+            ]);
         else:
             $validator = Validator::make($inputs, [
                 'firstName' => 'required',
@@ -159,42 +175,106 @@ class UsersController extends Controller
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|required_with:ConfirmPassword|same:ConfirmPassword|min:6'
             ]);
-
+        endif;
             if($validator->fails()) {
                 return response()->json(['error' => $validator->errors()], 401);
             }
-
-            $planDetail = Membership::where('id',$inputs['planID'])->first();
-
-            $user = new User;
-            $user->role = 'subscriber';
-            if($planDetail->plan_category=='family_parent'):
-                $user->memberType = 'family_parent_member';
-            elseif($planDetail->plan_category=='careprovider'):
-                $user->memberType = 'care_provider_member';
-            elseif($planDetail->plan_category=='agency'):
-                $user->memberType = 'agency_member';
-            endif;
-            $user->firstName = $inputs['firstName'];
-            $user->lastName = $inputs['lastName'];
-            $user->name = $inputs['firstName'].' '.$inputs['lastName'];
-            //$user->lastName = $inputs['lastName'];
-            $user->address1 = $inputs['address1'];
-            if(!empty($inputs['address22'])) :
-                $user->address2 = $inputs['address22'];
-            endif;
-            $user->state = $inputs['stateProvince'];
-            $user->postal_code = $inputs['postalCode'];
-            $user->mobile = $inputs['phoneNumber'];
-            $user->username = $inputs['userName'];
-            $user->email = $inputs['email'];
-            $user->password = Hash::make($inputs['password']);
-            $user->user_password = $inputs['password'];
-            $user->wp_password_update = 1;
-            $user->save();
-        endif;  
-
+        
+        if(!empty($inputs['address22'])) :
+            $address2 = $inputs['address22'];
+        else:
+            $address2 = '';
+        endif;
+        $planDetail = Membership::where('id',$inputs['planID'])->first();
+        if($planDetail->plan_category=='family_parent'):
+            $memberType = 'family_parent_member';
+            $memberGroupID = '1';
+        elseif($planDetail->plan_category=='careprovider'):
+            $memberType = 'care_provider_member';
+            $memberGroupID = '2';
+        elseif($planDetail->plan_category=='agency'):
+            $memberType = 'agency_member';
+            $memberGroupID = '3';
+        else:
+            $memberGroupID = '';
+        endif;        
         $patmentGateway = PaymentGateway::where('id',1)->first();
+        Session::put('userData',[
+            'planID' => $inputs['planID'],
+            'planPriceID' => $inputs['planPriceID'],
+            'role' => 'subscriber',
+            'memberType' => $memberType,
+            'firstName' => $inputs['firstName'],
+            'lastName' => $inputs['lastName'],
+            'name' => $inputs['firstName'].' '.$inputs['lastName'],
+            'address1' => $inputs['address1'],
+            'address2' => $address2,
+            'state' => $inputs['stateProvince'],
+            'postal_code' => $inputs['postalCode'],
+            'mobile' => $inputs['phoneNumber'],
+            'username' => $inputs['userName'],
+            'email' => $inputs['email'],
+            'user_password' => encrypt($inputs['password']),
+            'UserGroup' => $memberGroupID
+            ]);            
+        $userData_session = Session::get('userData');
+        return response()->json([
+            'userSession' => $userData_session,
+            'planDetail' =>$planDetail
+            // 'checkout_sessionID' => $checkout_sessionID,
+            // 'success_url' => $success_url2
+        ]); 
+        // $inputs = Request::all();
+        // if((Auth::check())):
+        //     $user = User::findOrFail(Auth::user()->id);
+        // else:
+        //     $validator = Validator::make($inputs, [
+        //         'firstName' => 'required',
+        //         'lastName' => 'required',
+        //         'address1' => 'required|string|max:255',
+        //         'stateProvince' => 'required|string|max:255',
+        //         'postalCode' => 'required|string|max:255',
+        //         'phoneNumber' => 'required|string|max:255',
+        //         'userName' => 'required|string|max:255|unique:users',
+        //         'email' => 'required|string|email|max:255|unique:users',
+        //         'password' => 'required|required_with:ConfirmPassword|same:ConfirmPassword|min:6'
+        //     ]);
+
+        //     if($validator->fails()) {
+        //         return response()->json(['error' => $validator->errors()], 401);
+        //     }
+
+        //     $planDetail = Membership::where('id',$inputs['planID'])->first();
+
+        //     $user = new User;
+        //     $user->role = 'subscriber';
+        //     if($planDetail->plan_category=='family_parent'):
+        //         $user->memberType = 'family_parent_member';
+        //     elseif($planDetail->plan_category=='careprovider'):
+        //         $user->memberType = 'care_provider_member';
+        //     elseif($planDetail->plan_category=='agency'):
+        //         $user->memberType = 'agency_member';
+        //     endif;
+        //     $user->firstName = $inputs['firstName'];
+        //     $user->lastName = $inputs['lastName'];
+        //     $user->name = $inputs['firstName'].' '.$inputs['lastName'];
+        //     //$user->lastName = $inputs['lastName'];
+        //     $user->address1 = $inputs['address1'];
+        //     if(!empty($inputs['address22'])) :
+        //         $user->address2 = $inputs['address22'];
+        //     endif;
+        //     $user->state = $inputs['stateProvince'];
+        //     $user->postal_code = $inputs['postalCode'];
+        //     $user->mobile = $inputs['phoneNumber'];
+        //     $user->username = $inputs['userName'];
+        //     $user->email = $inputs['email'];
+        //     $user->password = Hash::make($inputs['password']);
+        //     $user->user_password = $inputs['password'];
+        //     $user->wp_password_update = 1;
+        //     $user->save();
+        // endif;  
+
+        // $patmentGateway = PaymentGateway::where('id',1)->first();
 
         // if(stripeDetail('payment_mode')=='test_mode'):
         //     $stripe = new \Stripe\StripeClient(
@@ -247,20 +327,27 @@ class UsersController extends Controller
         //     $success_url2 = $success_url;
         // endif;
 
-        $userGroups = new UserGroup;
-        $userGroups->userID = $user->id;
-        $userGroups->groupID = $inputs['UserGroup'];
-        $userGroups->save(); 
+        // $userGroups = new UserGroup;
+        // $userGroups->userID = $user->id;
+        // $userGroups->groupID = $inputs['UserGroup'];
+        // $userGroups->save(); 
 
-        return response()->json([
-            'userInfo' => $user,
-            'planDetail' => $planDetail,
-            'patmentGateway' => $patmentGateway,
-            //'checkout_sessionID' => $checkout_sessionID,
-            //'success_url' => $success_url2            
-        ]);
+        // return response()->json([
+        //     'userInfo' => $user,
+        //     'planDetail' => $planDetail,
+        //     'patmentGateway' => $patmentGateway,
+        //     //'checkout_sessionID' => $checkout_sessionID,
+        //     //'success_url' => $success_url2            
+        // ]);
     }
 
+    public function getUserSession()
+    {
+        $userData_session = Session::get('userData');
+        return response()->json([
+            'userSession' => $userData_session
+        ]);
+    }
 
     public function registerFreeCareProvider(Request $request)
     {

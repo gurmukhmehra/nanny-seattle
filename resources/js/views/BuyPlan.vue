@@ -188,12 +188,12 @@
                         <router-link to="/terms-of-use" rel="Terms of Use" target="_blank" style="font-weight: 600;">
                             I have read and agree to the Terms of Use<sup class="text-danger">*</sup>
                         </router-link>
-                    </label>
-                    <p class="text-danger" v-if="agreeTerms">{{ agreeTerms }}</p>
+                        <p class="text-danger" v-if="agreeTerms">{{ agreeTerms }}</p>
+                    </label>                    
                 </div>
                 <div class="form-check">
                     <label class="form-check-label">
-                        <input type="checkbox" class="form-check-input" checked value=""> 
+                        <input type="checkbox" class="form-check-input" value=""> 
                         <span style="font-weight: 600;">Sign up for important news, discounts and updates! Not to worry...we only send one email per week.</span>                       
                     </label>
                 </div>
@@ -205,7 +205,7 @@
                             <li><span class="text-danger">{{ allErrors}} </span></li>
                         </div>
                     </div>
-                </ul>                    
+                </ul>                                    
             </div>      
             <div class="form-group  mt-3">           
                 <button v-on:click="register" class="custom_yellow_btn w-100" style="font-weight: bold;text-transform: uppercase;">
@@ -264,10 +264,26 @@
                 this.Coupon_Code = true;
             },
             read() {
-                axios.get(`/api/buy-plan/${this.$route.params.slug}`).then(({ data }) => {
-                    this.planDetail = data;
-                })
-                .catch((err) => console.error(err));
+                axios.get(`/api/buy-plan/${this.$route.params.slug}`, {
+                }).then((response) => {
+                    this.planDetail = response.data.planDetail;
+                    if(response.data.userData_session==null){
+
+                    } else {                        
+                        this.firstName = response.data.userData_session.firstName;
+                        this.lastName = response.data.userData_session.lastName,
+                        this.address1 = response.data.userData_session.address1,
+                        this.address22 = response.data.userData_session.address2,
+                        this.stateProvince = response.data.userData_session.state,
+                        this.postalCode = response.data.userData_session.postal_code,
+                        this.phoneNumber = response.data.userData_session.mobile,
+                        this.email = response.data.userData_session.email,
+                        this.userName = response.data.userData_session.username,
+                        this.password = response.data.userData_session.user_password,
+                        this.ConfirmPassword = response.data.userData_session.user_password
+                    }                   
+                }).catch(error => {
+                });                 
             },
             stripeDetail() {
                 axios.get(`/api/payment-gateway`, {
@@ -290,52 +306,51 @@
             },
             register() { 
                 this.loading = true; 
-                if(this.$refs.theCheckbox.checked) {          
+                if (this.$refs.theCheckbox.checked) {
                     axios.post(`/api/register`, {                                   
-                        planID: this.planDetail.id,
-                        planPrice: this.planDetail.mepr_product_price,
-                        planPriceID: this.planDetail.stripe_prod_priceID,
-                        //memberType: 'family_parent_member',
-                        UserGroup:this.UserGroup,
-                        firstName: this.firstName,
-                        lastName: this.lastName,
-                        email: this.email,
-                        address1: this.address1,
-                        address22: this.address22,
-                        stateProvince: this.stateProvince,
-                        postalCode: this.postalCode,
-                        phoneNumber: this.phoneNumber,
-                        userName: this.userName,
-                        password: this.password,
-                        ConfirmPassword: this.ConfirmPassword,
+                    planID: this.planDetail.id,
+                    planPrice: this.planDetail.mepr_product_price,
+                    planPriceID: this.planDetail.stripe_prod_priceID,
+                    //memberType: 'family_parent_member',
+                    UserGroup:this.UserGroup,
+                    firstName: this.firstName,
+                    lastName: this.lastName,
+                    email: this.email,
+                    address1: this.address1,
+                    address22: this.address22,
+                    stateProvince: this.stateProvince,
+                    postalCode: this.postalCode,
+                    phoneNumber: this.phoneNumber,
+                    userName: this.userName,
+                    password: this.password,
+                    ConfirmPassword: this.ConfirmPassword,
                     }).then((response) => {
-                        //console.log(response.data.userInfo.email);
                         this.loading = true;
-                        this.email = "";
-                        this.firstName = "";
-                        this.lastName = "";
-                        this.email = "";
-                        this.address1 = "";
-                        this.address22 = "";
-                        this.stateProvince = "";
-                        this.postalCode = "";
-                        this.phoneNumber = "";
-                        this.userName = "";
-                        this.password = "";
-                        this.ConfirmPassword = "";                
+                        // this.email = "";
+                        // this.firstName = "";
+                        // this.lastName = "";
+                        // this.email = "";
+                        // this.address1 = "";
+                        // this.address22 = "";
+                        // this.stateProvince = "";
+                        // this.postalCode = "";
+                        // this.phoneNumber = "";
+                        // this.userName = "";
+                        // this.password = "";
+                        // this.ConfirmPassword = "";                
                         router.push({ name: 'stripepayment', 
-                                        params: {
-                                            publishableKeys: response.data.patmentGateway.StripePublishablekey,
-                                            planID:response.data.planDetail.id,
-                                            planTitle:response.data.planDetail.post_title,
-                                            planPrice:response.data.planDetail.mepr_product_price,
-                                            planPriceID:response.data.planDetail.stripe_prod_priceID,
-                                            planProduct_period:response.data.planDetail.mepr_product_period,
-                                            userEmail:response.data.userInfo.email,
-                                            userIDs:response.data.userInfo.id
-                                            //sessionId:response.data.checkout_sessionID
-                                        } 
-                                    });
+                                params: {
+                                //publishableKeys: response.data.patmentGateway.StripePublishablekey,
+                                planTitle:response.data.planDetail.post_title,
+                                planPrice:response.data.planDetail.mepr_product_price,
+                                // planPriceID:response.data.planDetail.stripe_prod_priceID,
+                                // planProduct_period:response.data.planDetail.mepr_product_period,
+                                // userEmail:response.data.userInfo.email,
+                                // userIDs:response.data.userInfo.id
+                                //sessionId:response.data.checkout_sessionID
+                                } 
+                        });                        
+                        
                     }).catch(error => {
                         //this.correct = true, 
                         this.loading = false;
@@ -345,7 +360,7 @@
                     this.loading = false;
                     this.agreeTerms = "You have to agree the terms of use.";
                     setTimeout(() => this.agreeTerms = '', 3000); 
-                }
+                }    
             },
             addressValue(){
                 if(this.address1.length>0){
@@ -380,10 +395,10 @@
                 });                 
             }
         },    
-        mounted() { 
+        mounted() {   
             document.title = this.pageTitle;
 			document.getElementsByTagName('meta')["description"].content = ""+this.pageMetaDescription+"";
-			document.getElementsByTagName('meta')["keywords"].content = ""+this.pageMetaKeywords+"";                        
+			document.getElementsByTagName('meta')["keywords"].content = ""+this.pageMetaKeywords+"";                      
             this.initAutocomplete();         
             this.loading = false;
             if (window.Laravel.isLoggedin) {
@@ -401,13 +416,14 @@
                 this.email = window.Laravel.user.email,
                 this.userName = window.Laravel.user.username
             }
-            this.read();
+            
             axios.get(`/api/groups`).then((response) => {            
                 this.UserGroup = response.data.allGroups[0].id;
             }).catch((err) => console.error(err)); 
                       
         },
-        created(){
+        created(){             
+            this.read();
             this.stripeDetail();
             window.scrollTo(0,0);
         },
